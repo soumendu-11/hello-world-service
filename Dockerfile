@@ -1,11 +1,9 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# Use the AWS Lambda Python 3.9 base image
+FROM public.ecr.aws/lambda/python:3.9
 
-# Set the working directory in the container
-WORKDIR /app
+# Copy the function code to the Lambda task root
+COPY hello.py ${LAMBDA_TASK_ROOT}
 
-# Copy the current directory contents into the container at /app
-COPY hello.py .
+# Set the CMD to your handler
+CMD [ "hello.handler" ]
 
-# Run hello.py when the container launches
-CMD ["python", "hello.py"]

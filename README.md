@@ -1,39 +1,52 @@
-# Hello World Service with Docker and GitHub Actions
+# Hello World Service with Docker, ECR, and AWS Lambda
 
-This project demonstrates a simple "Hello World" Python service that is containerized with Docker and managed via GitHub Actions.
+This project demonstrates a simple "Hello World" Python service that is containerized with Docker, pushed to Amazon ECR, and deployed to AWS Lambda via GitHub Actions.
 
 ## Project Structure
 
-- `hello.py`: The Python script that prints "Hello World".
-- `Dockerfile`: Configuration for containerizing the script.
-- `.github/workflows/main.yml`: GitHub Actions workflow for automated triggers.
+- `hello.py`: Python script with a Lambda-compatible `handler` function.
+- `Dockerfile`: Configuration using the AWS Lambda Python base image.
+- `.github/workflows/main.yml`: CI/CD pipeline to build, push to ECR, and update Lambda.
 - `.env`: (Local only) Stores environment variables and credentials.
 
 ## Setup
 
-1. **Local Environment**:
-   - Ensure Docker is installed.
-   - Create a `.env` file with your credentials (see template).
+### 1. AWS Infrastructure (One-time)
+Run these commands locally using your AWS CLI to set up the necessary components:
 
-2. **GitHub Secrets**:
-   To enable the GitHub Actions workflow to run successfully with AWS, add the following secrets to your GitHub repository:
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-   - `AWS_SESSION_TOKEN` (Optional, if using temporary credentials)
+**Create ECR Repository:**
+```bash
+aws ecr create-repository --repository-name hello-world-service --region eu-central-1
+```
+
+**Create Lambda Function (Shell):**
+Note: You must first have an execution role for Lambda.
+```bash
+aws lambda create-function \
+    --function-name hello-world-service \
+    --package-type Image \
+    --code ImageUri=<YOUR_ACCOUNT_ID>.dkr.ecr.eu-central-1.amazonaws.com/hello-world-service:latest \
+    --role <YOUR_LAMBDA_ROLE_ARN>
+```
+
+### 2. GitHub Secrets
+Add these secrets to your GitHub repository:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN` (required for temporary SSO credentials)
 
 ## Triggers
 
-The service is triggered in three ways:
-1. **Push**: Automatically runs when changes are pushed to the `main` branch.
-2. **Schedule**: Runs daily at midnight (UTC).
-3. **On-Demand**: Can be manually triggered from the GitHub Actions tab.
+- **Push**: Automatically builds and deploys on every push to `main`.
+- **On-Demand**: Trigger manually from the "Actions" tab.
+- **Schedule**: Triggered automatically via cron.
 
-## Running Locally
-
-To build and run the service locally:
-
+## Local Testing
+To test the Lambda-compatible container locally:
 ```bash
-docker build -t hello-world-service .
-docker run hello-world-service
+docker build -t hello-lambda .
+docker run -p 9000:8080 hello-lambda
+# In another terminal:
+curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
 ```
 # hello-world-service

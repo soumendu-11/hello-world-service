@@ -2,5 +2,6 @@
 *.jpeg
 *.env
 *.sh
+.DS_Store
 
 
